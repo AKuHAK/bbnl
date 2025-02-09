@@ -3,10 +3,10 @@
 #include <loadfile.h>
 #include <sbv_patches.h>
 #include <sifrpc.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 // Macros for loading embedded IOP modules
 #define IRX_DEFINE(mod)                                                                                                                              \
@@ -66,7 +66,7 @@ static ModuleListEntry moduleList[] = {
 
 // Loads module, executing argument function if it's present
 int loadModule(ModuleListEntry *mod);
-
+#include <unistd.h>
 // Initializes IOP modules
 int initModules() {
   int ret = 0;
@@ -93,6 +93,8 @@ int initModules() {
       printf("ERROR: Failed to initialize module %s: %d\n", moduleList[i].name, ret);
       return ret;
     }
+    if (!strcmp(moduleList[i].name, "ata_bd"))
+      sleep(1); // PS2 APA modules can hang forever if atad is not given enough time to initialize
 
     // Clean up arguments
     if (moduleList[i].argStr != NULL)
