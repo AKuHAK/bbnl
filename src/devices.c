@@ -1,8 +1,8 @@
 #include "devices.h"
+#include <hdd-ioctl.h>
 #include <ps2sdkapi.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <hdd-ioctl.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
@@ -18,18 +18,18 @@ static char *mountpoints[] = {
 // Waits for HDD modules to initialize
 int initDevices() {
   DIR *directory;
-  int delayAttempts = 2;
+  int delayAttempts = 20;
 
   for (int i = 0; i < sizeof(mountpoints) / sizeof(char *); i++) {
     printf("Trying to open %s\n", mountpoints[i]);
     // Wait for IOP to initialize device driver
     for (int attempts = 0; attempts < delayAttempts; attempts++) {
-      delay(2);
       directory = opendir(mountpoints[i]);
       if (directory != NULL) {
         closedir(directory);
         break;
       }
+      delay(5);
     }
     if (directory == NULL) {
       // All mountpoints must exist
