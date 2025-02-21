@@ -31,9 +31,10 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // Load configuration file
+  // Load configuration file.
+  // argv[0] should contain the path we can use to determine the APA partition name
   printf("Loading configuration file\n");
-  LauncherConfig *config = parseConfig();
+  LauncherConfig *config = parseConfig(argv[0]);
   if (!config) {
     printf("ERROR: Failed to load configuration file\n");
     return -1;

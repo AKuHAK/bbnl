@@ -22,9 +22,10 @@ typedef struct {
   Launcher launcher;
 } LauncherConfig;
 
-// Parses configuration file in the current working directory into LauncherConfig
+// Generates config name from APA partition path
+// and parses configuration file from the exFAT partition into LauncherConfig
 // Returns NULL on failure
-LauncherConfig *parseConfig();
+LauncherConfig *parseConfig(char *partitionPath);
 
 // Releases memory used by config, including the passed pointer
 void freeConfig(LauncherConfig *config);

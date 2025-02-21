@@ -5,47 +5,45 @@
 #include <stdlib.h>
 #include <string.h>
 
+// When launched from mounted PFS partition
 static char pfsPostfixStr[] = ":pfs:";
+// When launched from partition header
+static char patinfoPostfixStr[] = ":PATINFO";
 static char apaPartitionPrefix[] = "hdd0:PP.";
 static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
 
 // Parses the line into LauncherConfig
 void parseLine(LauncherConfig *info, char *line);
 
-// Gets configuration file name from the current working directory and parses it into LauncherConfig
+// Generates config name from APA partition path
+// and parses configuration file from the exFAT partition into LauncherConfig
 // Returns NULL on failure
-LauncherConfig *parseConfig() {
+LauncherConfig *parseConfig(char *partitionPath) {
   char buf[PATH_MAX];
 
-  // Get the current working directory
-  if (getcwd(buf, PATH_MAX) == NULL) {
-    printf("ERROR: Failed to get CWD\n");
-    return NULL;
-  }
-  printf("CWD is %s\n", buf);
-
-  // Make sure CWD is valid
-  char *pfsPostfix = strstr(buf, pfsPostfixStr);
-  if (!pfsPostfix || strncmp(buf, apaPartitionPrefix, sizeof(apaPartitionPrefix) - 1)) {
+  // Make sure the partition path is valid
+  if (strncmp(partitionPath, apaPartitionPrefix, sizeof(apaPartitionPrefix) - 1)) {
     printf("ERROR: Unsupported partition name\n");
     return NULL;
   }
+  printf("Got partition path %s\n", partitionPath);
 
-  // Replace PFS postfix from the current working directory path with ".cfg"
-  strcpy(pfsPostfix, ".cfg");
+  // Check for PATINFO postfix first
+  char *pathPostfix = strstr(partitionPath, patinfoPostfixStr);
+  if (!pathPostfix)
+    // If the path doesn't have PATINFO, check for PFS postfix
+    pathPostfix = strstr(partitionPath, pfsPostfixStr);
 
-  // Partition name without the APA partition prefix
-  char *cfgName = buf + sizeof(apaPartitionPrefix) - 1;
+  // Terminate the string on partition name
+  if (pathPostfix)
+    *pathPostfix = '\0';
 
-  // Generate config path
-  char *cfgPath = malloc(sizeof(bbnlCfgPrefix) + strlen(cfgName));
-  strcpy(cfgPath, bbnlCfgPrefix);
-  strcat(cfgPath, cfgName);
+  // Generate config path from partition name without the APA partition prefix
+  snprintf(buf, PATH_MAX, "%s%s.cfg", bbnlCfgPrefix, partitionPath + sizeof(apaPartitionPrefix) - 1);
 
-  printf("Loading configuration file from %s\n", cfgPath);
+  printf("Loading configuration file from %s\n", buf);
   // Open the configuration file
-  FILE *fd = fopen(cfgPath, "rb");
-  free(cfgPath);
+  FILE *fd = fopen(buf, "rb");
   if (!fd) {
     printf("ERROR: Failed to open the configuration file\n");
     return NULL;
