@@ -7,16 +7,20 @@ Supports Game ID for the Pixel FX line of products for both PS2 and PS1 titles.
 
 ## Supported backends
 
+BBNL uses APA partition name to search for config file on the exFAT partition.
+`hdd0:PP.` prefix and `:pfs:` postfix are removed from the current working directory and the resulting name is used to look for config in `mass0:/bbnl/`.
+For example, for `hdd0:PP.SLUS-20002.RIDGE_RACER_V:pfs:` it will try to open `mass0:/bbnl/SLUS-20002.RIDGE_RACER_V.cfg`.
+
 ### __OPL__  
-BBNL reads `hdd0:/__common/OPL/conf_hdd.cfg` to find OPL partition (`$OPL`) and launches `$OPL/OPNPS2LD.ELF` using `autoLaunchBDMGame` to load ISO from exFAT partition on internal HDD.  
-If `conf_hdd.cfg` doesn't exist, BBNL falls back to `+OPL` or `__common` partitions.
+If launcher is set to `OPL`, BBNL will launch `mass0:/bbnl/OPNPS2LD.ELF` using `autoLaunchBDMGame` to load ISO from exFAT partition on internal HDD.  
 
 ### __Neutrino__  
-BBNL launches Neutrino at `$OPL/neutrino/neutrino.elf` to load ISO from the exFAT partition on internal HDD.  
+If launcher is set to `NEUTRINO`, BBNL will launch `mass0:/neutrino/neutrino.elf` to load ISO from the exFAT partition on internal HDD.  
 Supports reading [NHDDL's configuration files](https://github.com/pcm720/nhddl?tab=readme-ov-file#argument-files) from the exFAT partition for applying Neutrino arguments.
 
 ### POPS
-BBNL loads a corresponding `POPStarter.elf` from the `__.POPS` partition.
+If launcher or disc type are set to `POPS`, BBNL will launch `mass0:/bbnl/POPSTARTER.ELF` and pass `bbnl:<file_name without .VCD>.ELF` to the POPStarter.
+POPStarter will ignore the `bbnl:` prefix and assume that it needs to boot `hdd0:__POPS/<file_name>`.
 
 **Note:**  
 - __OPL__ backend requires OPL v1.2.0-Beta-2197-d5e0998 or later, which can be downloaded [here](https://github.com/ps2homebrew/Open-PS2-Loader/releases/tag/latest)
@@ -24,7 +28,7 @@ BBNL loads a corresponding `POPStarter.elf` from the `__.POPS` partition.
 
 ## Usage
 
-Create a file named `launcher.cfg` and place the file in the same location as `bbnl.elf` or `BBNL.KELF`.
+Create a file named `<APA partition name without PP.>.cfg` and place the file in `mass0:/bbnl/`.
 
 ### OPL backend
 ```ini
@@ -53,7 +57,7 @@ launcher=POPS
 All PS2 titles will be launched from the exFAT partition on the internal drive from the `DVD` directory for `disc_type=DVD` and from the `CD` directory for `disc_type=CD`.
 
 All PS1 titles will be launched from `_.POPS` APA partition on the internal drive.  
-Place the .VCD files on the internal drive in the `__.POPS` partition along with a renamed `POPStarter.elf` matching each .VCD file.
+Place the .VCD files on the internal drive in the `__.POPS` partition.
 Make sure the renamed file ends with `.ELF` (in upper-case), not `.elf`.
 
 ### HDDOSD and PSBBN
