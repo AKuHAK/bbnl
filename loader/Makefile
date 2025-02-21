@@ -8,10 +8,7 @@ EE_BIN = loader.elf
 
 EE_OBJS = loader.o
 
-EE_LIBS =
-ifeq ($(DEBUG),1)
-EE_LIBS += -ldebug
-endif
+# EE_LIBS = -ldebug
 
 all: $(EE_BIN)
 

@@ -14,6 +14,8 @@
 #include <loadfile.h>
 #include <ps2sdkapi.h>
 #include <sifrpc.h>
+#include <stdlib.h>
+#include <string.h>
 
 //--------------------------------------------------------------
 // Redefinition of init/deinit libc:
@@ -66,12 +68,23 @@ int main(int argc, char *argv[]) {
   SifLoadFileInit();
   ret = SifLoadElf(argv[0], &elfdata);
   SifLoadFileExit();
-  if (ret == 0 && elfdata.epc != 0) {
-    FlushCache(0);
-    FlushCache(2);
-    return ExecPS2((void *)elfdata.epc, (void *)elfdata.gp, argc, argv);
-  } else {
+  if (ret != 0 || elfdata.epc == 0) {
     SifExitRpc();
     return -ENOENT;
   }
+
+  // Special case for POPStarter: argv[0] must contain path to VCD
+  // Shift all arguments by -1 if argv[1] starts with 'bbnl'
+  if ((argc > 1) && !memcmp(argv[1], "bbnl", 4)) {
+    free(argv[0]);
+    for (int i = 1; i < argc; i++) {
+      argv[i - 1] = argv[i];
+      argv[i] = NULL;
+      argc -= 1;
+    }
+  }
+
+  FlushCache(0);
+  FlushCache(2);
+  return ExecPS2((void *)elfdata.epc, (void *)elfdata.gp, argc, argv);
 }
