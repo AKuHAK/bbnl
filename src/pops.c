@@ -1,9 +1,11 @@
-#include "devices.h"
+#include "common.h"
 #include "loader.h"
-#include <ps2sdkapi.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static char popstarterPath[] = BDM_MOUNTPOINT "/bbnl/POPSTARTER.ELF";
 
 // Launches POPS
 int launchPOPS(char *filePath) {
@@ -12,20 +14,24 @@ int launchPOPS(char *filePath) {
   if (ext != NULL)
     *ext = '\0';
 
-  // Mount the __.POPS partition
-  if (mountPFS("hdd0:__.POPS")) {
-    printf("ERROR: Failed to mount POPS partition\n");
-    return -ENODEV;
+  if (tryFile(popstarterPath)) {
+    printf("ERROR: POPSTARTER.ELF is inaccessible\n");
+    return -ENOENT;
   }
 
-  // Build argv and launch the ELF file
-  char **argv = malloc(sizeof(char *));
-  int argSize = strlen(filePath) + 11;
-  argv[0] = calloc(sizeof(char), argSize);
-  snprintf(argv[0], argSize, "pfs0:/%s.ELF", filePath);
+  // POPStarter needs ELF path as argv[0].
+  // Mountpoint can be anything as long as the path ends with <image>.ELF,
+  // so we'll pass "bbnl:<image>.ELF" as argv[1].
+  //
+  // POPStarter will receive this as argv[0] because the ELF loader will
+  // replace argv[0] with argv[1] if argv[1] starts with "bbnl"
+  char **argv = malloc(sizeof(char *) * 2);
+  int argSize = strlen(filePath) + 10;
+  argv[0] = popstarterPath;
+  argv[1] = calloc(sizeof(char), argSize);
+  snprintf(argv[1], argSize, "bbnl:%s.ELF", filePath);
 
-  printf("Launching %s\n", argv[0]);
-  printf("ERROR: Failed to load %s: %d\n", argv[0], LoadELFFromFile(1, argv));
-  unmountPFS();
+  printf("Launching %s with %s\n", argv[0], argv[1]);
+  printf("ERROR: Failed to load %s: %d\n", argv[0], LoadELFFromFile(2, argv));
   return -ENOENT;
 }

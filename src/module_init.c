@@ -23,8 +23,6 @@ IRX_DEFINE(ps2dev9);
 IRX_DEFINE(bdm);
 IRX_DEFINE(bdmfs_fatfs);
 IRX_DEFINE(ata_bd);
-IRX_DEFINE(ps2hdd);
-IRX_DEFINE(ps2fs);
 
 // Function used to initialize module arguments.
 // Must set argLength and return non-null pointer to a argument string if successful.
@@ -57,16 +55,12 @@ static ModuleListEntry moduleList[] = {
     INT_MODULE(bdmfs_fatfs, NULL),
     // ATA
     INT_MODULE(ata_bd, NULL),
-    // PS2HDD
-    INT_MODULE(ps2hdd, &initPS2HDDArguments),
-    // PFS
-    INT_MODULE(ps2fs, &initPS2FSArguments),
 };
 #define MODULE_COUNT sizeof(moduleList) / sizeof(ModuleListEntry)
 
 // Loads module, executing argument function if it's present
 int loadModule(ModuleListEntry *mod);
-#include <unistd.h>
+
 // Initializes IOP modules
 int initModules() {
   int ret = 0;
@@ -93,8 +87,6 @@ int initModules() {
       printf("ERROR: Failed to initialize module %s: %d\n", moduleList[i].name, ret);
       return ret;
     }
-    if (!strcmp(moduleList[i].name, "ata_bd"))
-      sleep(1); // PS2 APA modules can hang forever if atad is not given enough time to initialize
 
     // Clean up arguments
     if (moduleList[i].argStr != NULL)
@@ -124,38 +116,4 @@ int loadModule(ModuleListEntry *mod) {
     ret = iopret;
 
   return ret;
-}
-
-// up to 4 descriptors, 20 buffers
-static char ps2hddArguments[] = "-o"
-                                "\0"
-                                "4"
-                                "\0"
-                                "-n"
-                                "\0"
-                                "20";
-// Sets arguments for PS2HDD modules
-char *initPS2HDDArguments(uint32_t *argLength) {
-  *argLength = sizeof(ps2hddArguments);
-
-  char *argStr = malloc(sizeof(ps2hddArguments));
-  memcpy(argStr, ps2hddArguments, sizeof(ps2hddArguments));
-  return argStr;
-}
-
-// up to 10 descriptors, 40 buffers
-char ps2fsArguments[] = "-o"
-                        "\0"
-                        "10"
-                        "\0"
-                        "-n"
-                        "\0"
-                        "40";
-// Sets arguments for PS2HDD modules
-char *initPS2FSArguments(uint32_t *argLength) {
-  *argLength = sizeof(ps2fsArguments);
-
-  char *argStr = malloc(sizeof(ps2fsArguments));
-  memcpy(argStr, ps2fsArguments, sizeof(ps2fsArguments));
-  return argStr;
 }

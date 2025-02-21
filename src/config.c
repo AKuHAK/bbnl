@@ -1,5 +1,5 @@
 #include "config.h"
-#include "devices.h"
+#include "common.h"
 #include <ps2sdkapi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,14 +27,17 @@ void parseLine(LauncherConfig *info, char *line) {
 
   // Parse argument and value
   if (!strcmp(line, "file_name")) {
+    printf("File name: %s\n", val);
     info->fileName = strdup(val);
     return;
   }
   if (!strcmp(line, "title_id")) {
+    printf("Title ID: %s\n", val);
     info->titleID = strdup(val);
     return;
   }
   if (!strcmp(line, "disc_type")) {
+    printf("Disc type: %s\n", val);
     if (!strcmp(val, "DVD")) {
       info->type = DISC_TYPE_DVD;
     } else if (!strcmp(val, "CD")) {
@@ -46,6 +49,7 @@ void parseLine(LauncherConfig *info, char *line) {
     return;
   }
   if (!strcmp(line, "launcher")) {
+    printf("Launcher: %s\n", val);
     if (!strcmp(val, "NEUTRINO")) {
       info->launcher = LAUNCHER_NEUTRINO;
     } else if (!strcmp(val, "POPS")) {
@@ -69,34 +73,46 @@ void freeConfig(LauncherConfig *config) {
   free(config);
 }
 
-// Parses configuration file in the current working directory into LauncherConfig
+static char pfsPostfixStr[] = ":pfs:";
+static char apaPartitionPrefix[] = "hdd0:PP.";
+static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
+
+// Gets configuration file name from the current working directory and parses it into LauncherConfig
 // Returns NULL on failure
 LauncherConfig *parseConfig() {
   char buf[PATH_MAX];
-  buf[0] = '\0';
 
   // Get the current working directory
   if (getcwd(buf, PATH_MAX) == NULL) {
     printf("ERROR: Failed to get CWD\n");
     return NULL;
   }
+  printf("CWD is %s\n", buf);
 
-  // Remove ":pfs:" postfix from the current working directory path
-  char *pfsPostfix = strstr(buf, ":pfs:");
-  if (pfsPostfix)
-    *pfsPostfix = '\0';
-
-  // Mount the current working directory
-  if (mountPFS(buf)) {
-    printf("ERROR: Failed to mount the partition\n");
+  // Make sure CWD is valid
+  char *pfsPostfix = strstr(buf, pfsPostfixStr);
+  if (!pfsPostfix || strncmp(buf, apaPartitionPrefix, sizeof(apaPartitionPrefix) - 1)) {
+    printf("ERROR: Unsupported partition name\n");
     return NULL;
   }
 
+  // Replace PFS postfix from the current working directory path with ".cfg"
+  strcpy(pfsPostfix, ".cfg");
+
+  // Partition name without the APA partition prefix
+  char *cfgName = buf + sizeof(apaPartitionPrefix) - 1;
+
+  // Generate config path
+  char *cfgPath = malloc(sizeof(bbnlCfgPrefix) + strlen(cfgName));
+  strcpy(cfgPath, bbnlCfgPrefix);
+  strcat(cfgPath, cfgName);
+
+  printf("Loading configuration file from %s\n", cfgPath);
   // Open the configuration file
-  FILE *fd = fopen("pfs0:launcher.cfg", "rb");
+  FILE *fd = fopen(cfgPath, "rb");
+  free(cfgPath);
   if (!fd) {
-    printf("ERROR: Failed to open launcher.cfg\n");
-    unmountPFS();
+    printf("ERROR: Failed to open the configuration file\n");
     return NULL;
   }
 
@@ -112,7 +128,6 @@ LauncherConfig *parseConfig() {
 
   // Parse file
   while (fgets(buf, sizeof(buf), fd) != NULL) {
-    printf("Parsing %s\n", buf);
     parseLine(lConfig, buf);
   }
 
@@ -123,6 +138,5 @@ LauncherConfig *parseConfig() {
   }
 
   fclose(fd);
-  unmountPFS();
   return lConfig;
 }

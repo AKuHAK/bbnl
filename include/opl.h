@@ -5,7 +5,4 @@
 // Assumes OPL partition is mounted.
 int launchOPL(char *filePath, char *titleID, DiscType mediaType);
 
-// Mounts OPL partition
-int mountOPLPartition();
-
 #endif
