@@ -38,11 +38,6 @@ typedef struct ModuleListEntry {
   moduleArgFunc argumentFunction; // Function used to initialize module arguments
 } ModuleListEntry;
 
-// Initializes PS2HDD-BDM arguments
-char *initPS2HDDArguments(uint32_t *argLength);
-// Initializes PS2FS arguments
-char *initPS2FSArguments(uint32_t *argLength);
-
 // List of modules to load
 static ModuleListEntry moduleList[] = {
     INT_MODULE(iomanX, NULL),

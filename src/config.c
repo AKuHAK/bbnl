@@ -5,77 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Parses line into LauncherConfig
-void parseLine(LauncherConfig *info, char *line) {
-  // Find argument name
-  char *val = strchr(line, '=');
-  if (!val) {
-    printf("WARN: Value delimiter not found\n");
-    return;
-  }
-
-  // Terminate argument and advance pointer to point to value
-  *val = '\0';
-  val++;
-
-  // Remove newline from value
-  char *newline = NULL;
-  if ((newline = strchr(val, '\r')) != NULL)
-    *newline = '\0';
-  if ((newline = strchr(val, '\n')) != NULL)
-    *newline = '\0';
-
-  // Parse argument and value
-  if (!strcmp(line, "file_name")) {
-    printf("File name: %s\n", val);
-    info->fileName = strdup(val);
-    return;
-  }
-  if (!strcmp(line, "title_id")) {
-    printf("Title ID: %s\n", val);
-    info->titleID = strdup(val);
-    return;
-  }
-  if (!strcmp(line, "disc_type")) {
-    printf("Disc type: %s\n", val);
-    if (!strcmp(val, "DVD")) {
-      info->type = DISC_TYPE_DVD;
-    } else if (!strcmp(val, "CD")) {
-      info->type = DISC_TYPE_CD;
-    } else if (!strcmp(val, "POPS")) {
-      info->type = DISC_TYPE_POPS;
-      info->launcher = LAUNCHER_POPS;
-    }
-    return;
-  }
-  if (!strcmp(line, "launcher")) {
-    printf("Launcher: %s\n", val);
-    if (!strcmp(val, "NEUTRINO")) {
-      info->launcher = LAUNCHER_NEUTRINO;
-    } else if (!strcmp(val, "POPS")) {
-      info->launcher = LAUNCHER_POPS;
-    } else { // Use OPL as default launcher
-      info->launcher = LAUNCHER_OPL;
-    }
-    return;
-  }
-  printf("WARN: Unsupported argument %s\n", line);
-}
-
-// Releases memory used by config, including the passed pointer
-void freeConfig(LauncherConfig *config) {
-  if (!config->fileName)
-    free(config->fileName);
-
-  if (!config->titleID)
-    free(config->titleID);
-
-  free(config);
-}
-
 static char pfsPostfixStr[] = ":pfs:";
 static char apaPartitionPrefix[] = "hdd0:PP.";
 static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
+
+// Parses the line into LauncherConfig
+void parseLine(LauncherConfig *info, char *line);
 
 // Gets configuration file name from the current working directory and parses it into LauncherConfig
 // Returns NULL on failure
@@ -139,4 +74,72 @@ LauncherConfig *parseConfig() {
 
   fclose(fd);
   return lConfig;
+}
+
+// Releases memory used by config, including the passed pointer
+void freeConfig(LauncherConfig *config) {
+  if (!config->fileName)
+    free(config->fileName);
+
+  if (!config->titleID)
+    free(config->titleID);
+
+  free(config);
+}
+
+// Parses the line into LauncherConfig
+void parseLine(LauncherConfig *info, char *line) {
+  // Find argument name
+  char *val = strchr(line, '=');
+  if (!val) {
+    printf("WARN: Value delimiter not found\n");
+    return;
+  }
+
+  // Terminate argument and advance pointer to point to value
+  *val = '\0';
+  val++;
+
+  // Remove newline from value
+  char *newline = NULL;
+  if ((newline = strchr(val, '\r')) != NULL)
+    *newline = '\0';
+  if ((newline = strchr(val, '\n')) != NULL)
+    *newline = '\0';
+
+  // Parse argument and value
+  if (!strcmp(line, "file_name")) {
+    printf("File name: %s\n", val);
+    info->fileName = strdup(val);
+    return;
+  }
+  if (!strcmp(line, "title_id")) {
+    printf("Title ID: %s\n", val);
+    info->titleID = strdup(val);
+    return;
+  }
+  if (!strcmp(line, "disc_type")) {
+    printf("Disc type: %s\n", val);
+    if (!strcmp(val, "DVD")) {
+      info->type = DISC_TYPE_DVD;
+    } else if (!strcmp(val, "CD")) {
+      info->type = DISC_TYPE_CD;
+    } else if (!strcmp(val, "POPS")) {
+      info->type = DISC_TYPE_POPS;
+      info->launcher = LAUNCHER_POPS;
+    }
+    return;
+  }
+  if (!strcmp(line, "launcher")) {
+    printf("Launcher: %s\n", val);
+    if (!strcmp(val, "NEUTRINO")) {
+      info->launcher = LAUNCHER_NEUTRINO;
+    } else if (!strcmp(val, "POPS")) {
+      info->launcher = LAUNCHER_POPS;
+    } else { // Use OPL as default launcher
+      info->launcher = LAUNCHER_OPL;
+    }
+    return;
+  }
+  printf("WARN: Unsupported argument %s\n", line);
 }

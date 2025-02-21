@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 // Waits for HDD modules to initialize
-int initHDD();
+int waitForHDD();
 
 int main(int argc, char *argv[]) {
   printf("*************\nBBN Launcher\n%s\nby pcm720 and CosmicScale\n*************\n", GIT_VERSION);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   // Init devices
   printf("Waiting for HDD\n");
-  if (initHDD() < 0) {
+  if (waitForHDD() < 0) {
     printf("ERROR: Failed to initialize HDD\n");
     return -1;
   }
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   printf("Loading configuration file\n");
   LauncherConfig *config = parseConfig();
   if (!config) {
-    printf("ERROR: Failed to parse configuration file\n");
+    printf("ERROR: Failed to load configuration file\n");
     return -1;
   }
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     launchNeutrino(config->fileName, config->type);
     break;
   default:
-    printf("ERROR: Unknown launcher type\n");
+    printf("ERROR: Unsupported launcher type\n");
   }
   return -1;
 }
@@ -66,7 +66,7 @@ void delay(int count) {
 }
 
 // Waits for HDD modules to initialize
-int initHDD() {
+int waitForHDD() {
   DIR *directory;
   int delayAttempts = 20;
 

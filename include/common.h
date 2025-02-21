@@ -5,6 +5,6 @@
 #define BDM_MOUNTPOINT "mass0:"
 
 // Tests if file exists by opening it
-int tryFile(char *filepath);
+int tryFile(char *filePath);
 
 #endif

@@ -6,14 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEFAULT_OPL_PARTITION "hdd0:+OPL"
-#define OPL_CONF_PARTITION_ARG "hdd_partition"
-
 static char oplPath[] = BDM_MOUNTPOINT "/bbnl/OPNPS2LD.elf";
 
 // Launches the ISO via OPL.
-// Assumes OPL partition is mounted.
-int launchOPL(char *filePath, char *titleID, DiscType mediaType) {
+int launchOPL(char *fileName, char *titleID, DiscType mediaType) {
   // Build argv and launch the ELF file
   /* argv[0] ELF boot path
      argv[1] file name (including extension)
@@ -29,7 +25,7 @@ int launchOPL(char *filePath, char *titleID, DiscType mediaType) {
   }
 
   argv[0] = oplPath;
-  argv[1] = filePath;
+  argv[1] = fileName;
   argv[2] = titleID;
   switch (mediaType) {
   case DISC_TYPE_CD:
@@ -44,7 +40,7 @@ int launchOPL(char *filePath, char *titleID, DiscType mediaType) {
   }
   argv[4] = "bdm";
 
-  printf("Launching %s with arguments:\n", filePath);
+  printf("Launching %s with arguments:\n", fileName);
   for (int i = 0; i < argCount; i++) {
     printf("%d: %s\n", i + 1, argv[i]);
   }
