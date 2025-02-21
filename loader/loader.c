@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
   // Special case for POPStarter: argv[0] must contain path to VCD
   // Shift all arguments by -1 if argv[1] starts with 'bbnl'
   if ((argc > 1) && !memcmp(argv[1], "bbnl", 4)) {
-    free(argv[0]);
     for (int i = 1; i < argc; i++) {
       argv[i - 1] = argv[i];
       argv[i] = NULL;
