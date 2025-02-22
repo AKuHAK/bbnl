@@ -18,13 +18,19 @@ If launcher is set to `OPL`, BBNL will launch `mass0:/bbnl/OPNPS2LD.ELF` using `
 If launcher is set to `NEUTRINO`, BBNL will launch `mass0:/neutrino/neutrino.elf` to load ISO from the exFAT partition on internal HDD.  
 Supports reading [NHDDL's configuration files](https://github.com/pcm720/nhddl?tab=readme-ov-file#argument-files) from the exFAT partition for applying Neutrino arguments.
 
-### POPS
+### __POPS__
 If launcher or disc type are set to `POPS`, BBNL will launch `mass0:/bbnl/POPSTARTER.ELF` and pass `bbnl:<file_name without .VCD>.ELF` to the POPStarter.
 POPStarter will ignore the `bbnl:` prefix and assume that it needs to boot `hdd0:__POPS/<file_name>`.
 
+### __ELF__
+BBNL can also be used as a generic ELF launcher.
+It will treat `file_name` as a relative path and launch it from the exFAT partition.
+It also supports passing arbitrary arguments to the launcher ELF in the order they are specified in the config file.
+Make sure the sum length of all arguments is under 255 characters, otherwise it may be truncated.
+
 **Note:**  
 - __OPL__ backend requires OPL v1.2.0-Beta-2197-d5e0998 or later, which can be downloaded [here](https://github.com/ps2homebrew/Open-PS2-Loader/releases/tag/latest)
-- __Neutrino__ backend requires Neutrino >1.5.0 with quickboot support, which can be downloaded [here](https://github.com/rickgaiser/neutrino/releases) _(temporarily not available)_
+- __Neutrino__ backend requires Neutrino 1.6.0 with quickboot support, which can be downloaded [here](https://github.com/rickgaiser/neutrino/releases)
 
 ## Usage
 
@@ -54,6 +60,16 @@ disc_type=POPS
 launcher=POPS
 ```
 
+### Generic ELF backend
+```ini
+file_name=/neutrino/neutrino.elf
+launcher=ELF
+arg=-bsd=ata
+arg=-dvd=mass0:/CD/Ridge Racer V.iso
+arg12=-elf=cdrom0:\SLUS_200.02;1
+arg1=-qb
+```
+
 All PS2 titles will be launched from the exFAT partition on the internal drive from the `DVD` directory for `disc_type=DVD` and from the `CD` directory for `disc_type=CD`.
 
 All PS1 titles will be launched from `_.POPS` APA partition on the internal drive.  
@@ -76,7 +92,7 @@ VMODE = NTSC
 HDDUNITPOWER = NICHDD
 ```
 
-Prepare a signed executable (for example, by using [this app](https://www.psx-place.com/resources/kelftool-fmcb-compatible-fork.1104/))
+Prepare a signed executable (for example, by using [this app](https://github.com/ps2homebrew/kelftool))
 
 ```cmd
 kelftool encrypt mbr bbnl.elf BBNL.KELF
