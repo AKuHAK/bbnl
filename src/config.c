@@ -13,7 +13,7 @@ static char apaPartitionPrefix[] = "hdd0:PP.";
 static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
 
 // Parses the line into LauncherConfig
-void parseLine(LauncherConfig *info, char *line);
+void parseLine(LauncherConfig *lcfg, char *line);
 
 // Generates config name from APA partition path
 // and parses configuration file from the exFAT partition into LauncherConfig
@@ -58,13 +58,15 @@ LauncherConfig *parseConfig(char *partitionPath) {
   lConfig->titleID = NULL;
   lConfig->type = DISC_TYPE_NONE;
   lConfig->launcher = LAUNCHER_OPL;
+  lConfig->args = NULL;
+  lConfig->argCount = 0;
 
   // Parse file
   while (fgets(buf, sizeof(buf), fd) != NULL) {
     parseLine(lConfig, buf);
   }
 
-  if (!lConfig->fileName || !lConfig->titleID || lConfig->type == DISC_TYPE_NONE) {
+  if (!lConfig->fileName || (lConfig->launcher != LAUNCHER_ELF && (!lConfig->titleID || lConfig->type == DISC_TYPE_NONE))) {
     printf("ERROR: Invalid configuration\n");
     freeConfig(lConfig);
     lConfig = NULL;
@@ -86,7 +88,7 @@ void freeConfig(LauncherConfig *config) {
 }
 
 // Parses the line into LauncherConfig
-void parseLine(LauncherConfig *info, char *line) {
+void parseLine(LauncherConfig *lcfg, char *line) {
   // Find argument name
   char *val = strchr(line, '=');
   if (!val) {
@@ -108,35 +110,61 @@ void parseLine(LauncherConfig *info, char *line) {
   // Parse argument and value
   if (!strcmp(line, "file_name")) {
     printf("File name: %s\n", val);
-    info->fileName = strdup(val);
+    lcfg->fileName = strdup(val);
     return;
   }
   if (!strcmp(line, "title_id")) {
     printf("Title ID: %s\n", val);
-    info->titleID = strdup(val);
+    lcfg->titleID = strdup(val);
     return;
   }
   if (!strcmp(line, "disc_type")) {
     printf("Disc type: %s\n", val);
     if (!strcmp(val, "DVD")) {
-      info->type = DISC_TYPE_DVD;
+      lcfg->type = DISC_TYPE_DVD;
     } else if (!strcmp(val, "CD")) {
-      info->type = DISC_TYPE_CD;
+      lcfg->type = DISC_TYPE_CD;
     } else if (!strcmp(val, "POPS")) {
-      info->type = DISC_TYPE_POPS;
-      info->launcher = LAUNCHER_POPS;
+      lcfg->type = DISC_TYPE_POPS;
+      lcfg->launcher = LAUNCHER_POPS;
     }
     return;
   }
   if (!strcmp(line, "launcher")) {
     printf("Launcher: %s\n", val);
     if (!strcmp(val, "NEUTRINO")) {
-      info->launcher = LAUNCHER_NEUTRINO;
+      lcfg->launcher = LAUNCHER_NEUTRINO;
     } else if (!strcmp(val, "POPS")) {
-      info->launcher = LAUNCHER_POPS;
+      lcfg->launcher = LAUNCHER_POPS;
+    } else if (!strcmp(val, "ELF")) {
+      lcfg->launcher = LAUNCHER_ELF;
     } else { // Use OPL as default launcher
-      info->launcher = LAUNCHER_OPL;
+      lcfg->launcher = LAUNCHER_OPL;
     }
+    return;
+  }
+  if (!strncmp(line, "arg", 3)) {
+    printf("Argument: %s\n", val);
+    lcfg->argCount++;
+
+    if (!lcfg->args) {
+      // Initialize argument list
+      lcfg->args = malloc(sizeof(ELFArgument));
+      lcfg->args->arg = strdup(val);
+      lcfg->args->next = NULL;
+      return;
+    }
+
+    // Go to the last argument in the list
+    ELFArgument *arg = lcfg->args;
+    while (arg->next != NULL)
+      arg = arg->next;
+
+    // Append new argument
+    arg->next = malloc(sizeof(ELFArgument));
+    arg->next->arg = strdup(val);
+    arg->next->next = NULL;
+
     return;
   }
   printf("WARN: Unsupported argument %s\n", line);

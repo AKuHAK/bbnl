@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config.h"
+#include "elf.h"
 #include "game_id.h"
 #include "loader.h"
 #include "module_init.h"
@@ -37,6 +38,11 @@ int main(int argc, char *argv[]) {
   LauncherConfig *config = parseConfig(argv[0]);
   if (!config) {
     printf("ERROR: Failed to load configuration file\n");
+    return -1;
+  }
+
+  if (config->launcher == LAUNCHER_ELF) {
+    launchELF(config->fileName, config->argCount, config->args);
     return -1;
   }
 

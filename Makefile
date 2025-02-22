@@ -7,7 +7,7 @@ EE_BIN = $(ELF_BASE_NAME)_unc.elf
 EE_BIN_PKD = $(ELF_BASE_NAME).elf
 
 EE_OBJS = main.o common.o config.o module_init.o game_id.o loader.o
-EE_OBJS += neutrino.o opl.o pops.o
+EE_OBJS += neutrino.o opl.o pops.o elf.o
 # Basic modules
 IRX_FILES += iomanX.irx fileXio.irx
 # BDM
