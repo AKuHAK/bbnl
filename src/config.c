@@ -1,12 +1,94 @@
 #include "config.h"
-#include "devices.h"
+#include "common.h"
 #include <ps2sdkapi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Parses line into LauncherConfig
-void parseLine(LauncherConfig *info, char *line) {
+// When launched from mounted PFS partition
+static char pfsPostfixStr[] = ":pfs:";
+// When launched from partition header
+static char patinfoPostfixStr[] = ":PATINFO";
+static char apaPartitionPrefix[] = "hdd0:PP.";
+static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
+
+// Parses the line into LauncherConfig
+void parseLine(LauncherConfig *lcfg, char *line);
+
+// Generates config name from APA partition path
+// and parses configuration file from the exFAT partition into LauncherConfig
+// Returns NULL on failure
+LauncherConfig *parseConfig(char *partitionPath) {
+  char buf[PATH_MAX];
+
+  // Make sure the partition path is valid
+  if (strncmp(partitionPath, apaPartitionPrefix, sizeof(apaPartitionPrefix) - 1)) {
+    printf("ERROR: Unsupported partition name\n");
+    return NULL;
+  }
+  printf("Got partition path %s\n", partitionPath);
+
+  // Check for PATINFO postfix first
+  char *pathPostfix = strstr(partitionPath, patinfoPostfixStr);
+  if (!pathPostfix)
+    // If the path doesn't have PATINFO, check for PFS postfix
+    pathPostfix = strstr(partitionPath, pfsPostfixStr);
+
+  // Terminate the string on partition name
+  if (pathPostfix)
+    *pathPostfix = '\0';
+
+  // Generate config path from partition name without the APA partition prefix
+  snprintf(buf, PATH_MAX, "%s%s.cfg", bbnlCfgPrefix, partitionPath + sizeof(apaPartitionPrefix) - 1);
+
+  printf("Loading configuration file from %s\n", buf);
+  // Open the configuration file
+  FILE *fd = fopen(buf, "rb");
+  if (!fd) {
+    printf("ERROR: Failed to open the configuration file\n");
+    return NULL;
+  }
+
+  // Reinitialize buffer and initialize config
+  memset(&buf, 0, PATH_MAX);
+  LauncherConfig *lConfig = malloc(sizeof(LauncherConfig));
+
+  // Set defaults
+  lConfig->fileName = NULL;
+  lConfig->titleID = NULL;
+  lConfig->type = DISC_TYPE_NONE;
+  lConfig->launcher = LAUNCHER_OPL;
+  lConfig->args = NULL;
+  lConfig->argCount = 0;
+
+  // Parse file
+  while (fgets(buf, sizeof(buf), fd) != NULL) {
+    parseLine(lConfig, buf);
+  }
+
+  if (!lConfig->fileName || (lConfig->launcher != LAUNCHER_ELF && (!lConfig->titleID || lConfig->type == DISC_TYPE_NONE))) {
+    printf("ERROR: Invalid configuration\n");
+    freeConfig(lConfig);
+    lConfig = NULL;
+  }
+
+  fclose(fd);
+  return lConfig;
+}
+
+// Releases memory used by config, including the passed pointer
+void freeConfig(LauncherConfig *config) {
+  if (!config->fileName)
+    free(config->fileName);
+
+  if (!config->titleID)
+    free(config->titleID);
+
+  free(config);
+}
+
+// Parses the line into LauncherConfig
+void parseLine(LauncherConfig *lcfg, char *line) {
   // Find argument name
   char *val = strchr(line, '=');
   if (!val) {
@@ -27,102 +109,63 @@ void parseLine(LauncherConfig *info, char *line) {
 
   // Parse argument and value
   if (!strcmp(line, "file_name")) {
-    info->fileName = strdup(val);
+    printf("File name: %s\n", val);
+    lcfg->fileName = strdup(val);
     return;
   }
   if (!strcmp(line, "title_id")) {
-    info->titleID = strdup(val);
+    printf("Title ID: %s\n", val);
+    lcfg->titleID = strdup(val);
     return;
   }
   if (!strcmp(line, "disc_type")) {
+    printf("Disc type: %s\n", val);
     if (!strcmp(val, "DVD")) {
-      info->type = DISC_TYPE_DVD;
+      lcfg->type = DISC_TYPE_DVD;
     } else if (!strcmp(val, "CD")) {
-      info->type = DISC_TYPE_CD;
+      lcfg->type = DISC_TYPE_CD;
     } else if (!strcmp(val, "POPS")) {
-      info->type = DISC_TYPE_POPS;
-      info->launcher = LAUNCHER_POPS;
+      lcfg->type = DISC_TYPE_POPS;
+      lcfg->launcher = LAUNCHER_POPS;
     }
     return;
   }
   if (!strcmp(line, "launcher")) {
+    printf("Launcher: %s\n", val);
     if (!strcmp(val, "NEUTRINO")) {
-      info->launcher = LAUNCHER_NEUTRINO;
+      lcfg->launcher = LAUNCHER_NEUTRINO;
     } else if (!strcmp(val, "POPS")) {
-      info->launcher = LAUNCHER_POPS;
+      lcfg->launcher = LAUNCHER_POPS;
+    } else if (!strcmp(val, "ELF")) {
+      lcfg->launcher = LAUNCHER_ELF;
     } else { // Use OPL as default launcher
-      info->launcher = LAUNCHER_OPL;
+      lcfg->launcher = LAUNCHER_OPL;
     }
     return;
   }
+  if (!strncmp(line, "arg", 3)) {
+    printf("Argument: %s\n", val);
+    lcfg->argCount++;
+
+    if (!lcfg->args) {
+      // Initialize argument list
+      lcfg->args = malloc(sizeof(ELFArgument));
+      lcfg->args->arg = strdup(val);
+      lcfg->args->next = NULL;
+      return;
+    }
+
+    // Go to the last argument in the list
+    ELFArgument *arg = lcfg->args;
+    while (arg->next != NULL)
+      arg = arg->next;
+
+    // Append new argument
+    arg->next = malloc(sizeof(ELFArgument));
+    arg->next->arg = strdup(val);
+    arg->next->next = NULL;
+
+    return;
+  }
   printf("WARN: Unsupported argument %s\n", line);
-}
-
-// Releases memory used by config, including the passed pointer
-void freeConfig(LauncherConfig *config) {
-  if (!config->fileName)
-    free(config->fileName);
-
-  if (!config->titleID)
-    free(config->titleID);
-
-  free(config);
-}
-
-// Parses configuration file in the current working directory into LauncherConfig
-// Returns NULL on failure
-LauncherConfig *parseConfig() {
-  char buf[PATH_MAX];
-  buf[0] = '\0';
-
-  // Get the current working directory
-  if (getcwd(buf, PATH_MAX) == NULL) {
-    printf("ERROR: Failed to get CWD\n");
-    return NULL;
-  }
-
-  // Remove ":pfs:" postfix from the current working directory path
-  char *pfsPostfix = strstr(buf, ":pfs:");
-  if (pfsPostfix)
-    *pfsPostfix = '\0';
-
-  // Mount the current working directory
-  if (mountPFS(buf)) {
-    printf("ERROR: Failed to mount the partition\n");
-    return NULL;
-  }
-
-  // Open the configuration file
-  FILE *fd = fopen("pfs0:launcher.cfg", "rb");
-  if (!fd) {
-    printf("ERROR: Failed to open launcher.cfg\n");
-    unmountPFS();
-    return NULL;
-  }
-
-  // Reinitialize buffer and initialize config
-  memset(&buf, 0, PATH_MAX);
-  LauncherConfig *lConfig = malloc(sizeof(LauncherConfig));
-
-  // Set defaults
-  lConfig->fileName = NULL;
-  lConfig->titleID = NULL;
-  lConfig->type = DISC_TYPE_NONE;
-  lConfig->launcher = LAUNCHER_OPL;
-
-  // Parse file
-  while (fgets(buf, sizeof(buf), fd) != NULL) {
-    printf("Parsing %s\n", buf);
-    parseLine(lConfig, buf);
-  }
-
-  if (!lConfig->fileName || !lConfig->titleID || lConfig->type == DISC_TYPE_NONE) {
-    printf("ERROR: Invalid configuration\n");
-    freeConfig(lConfig);
-    lConfig = NULL;
-  }
-
-  fclose(fd);
-  unmountPFS();
-  return lConfig;
 }

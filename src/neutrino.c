@@ -1,5 +1,5 @@
+#include "common.h"
 #include "config.h"
-#include "devices.h"
 #include "loader.h"
 #include <ctype.h>
 #include <fcntl.h>
@@ -9,7 +9,7 @@
 #include <string.h>
 
 // Arguments
-static char neutrinoPath[] = "pfs0:/neutrino/neutrino.elf";
+static char neutrinoPath[] = BDM_MOUNTPOINT "/neutrino/neutrino.elf";
 static char isoArgument[] = "dvd";
 static char bsdArgument[] = "bsd";
 // Neutrino bsd values
@@ -70,12 +70,10 @@ int assembleArgv(ArgumentList *arguments, char *argv[]) {
 // Launches the ISO via Neutrino.
 // Assumes parititon containing Neutrino as mounted as pfs0.
 int launchNeutrino(char *fileName, DiscType type) {
-  int fd = open(neutrinoPath, O_RDONLY);
-  if (fd < 0) {
+  if (tryFile(neutrinoPath)) {
     printf("ERROR: neutrino.elf is inaccessible\n");
     return -ENOENT;
   }
-  close(fd);
 
   // Build full ISO path
   int pathLength = sizeof(BDM_MOUNTPOINT) + 5 + strlen(fileName);

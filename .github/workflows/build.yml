@@ -28,7 +28,7 @@ jobs:
         name: artifacts
         path: |
           bbnl-*.elf
-          !bbnl-*_unc.elf
+          README.md
 
   release:
     needs: [build]
@@ -54,6 +54,7 @@ jobs:
       run: |
         cd artifacts
         mv bbnl-${{ env.GIT_VERSION }}.elf bbnl.elf
+        mv bbnl-${{ env.GIT_VERSION }}_unc.elf bbnl_unc.elf
         zip -r ../bbnl-${{ env.GIT_VERSION }}.zip ./*
 
     - uses: "marvinpinto/action-automatic-releases@latest"

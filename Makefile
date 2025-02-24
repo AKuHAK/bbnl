@@ -6,18 +6,16 @@ ELF_BASE_NAME := bbnl-$(GIT_VERSION)
 EE_BIN = $(ELF_BASE_NAME)_unc.elf
 EE_BIN_PKD = $(ELF_BASE_NAME).elf
 
-EE_OBJS = main.o config.o module_init.o devices.o game_id.o loader.o
-EE_OBJS += neutrino.o opl.o pops.o
+EE_OBJS = main.o common.o config.o module_init.o game_id.o loader.o
+EE_OBJS += neutrino.o opl.o pops.o elf.o
 # Basic modules
 IRX_FILES += iomanX.irx fileXio.irx
 # BDM
 IRX_FILES += ps2dev9.irx bdm.irx bdmfs_fatfs.irx ata_bd.irx
-# HDL modules
-IRX_FILES += ps2hdd.irx ps2fs.irx
 # Embedded ELF files
 ELF_FILES += loader.elf
 
-EE_LIBS = -lfileXio -lpatches -lgskit -ldmakit
+EE_LIBS = -lpatches -lgskit -ldmakit
 EE_CFLAGS += -mno-gpopt -G0 -DGIT_VERSION="\"${GIT_VERSION}\""
 
 EE_OBJS_DIR = obj/

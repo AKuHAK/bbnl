@@ -1,7 +1,7 @@
 #include <kernel.h>
-#include <string.h>
 #include <sifrpc.h>
 #include <stdint.h>
+#include <string.h>
 
 // Embedded ELF loader
 extern uint8_t loader_elf[];

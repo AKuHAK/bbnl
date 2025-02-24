@@ -2,6 +2,6 @@
 #define _POPS_H
 
 // Launches POPS
-int launchPOPS(char *filePath);
+int launchPOPS(char *fileName);
 
 #endif

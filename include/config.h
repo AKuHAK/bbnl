@@ -12,19 +12,28 @@ typedef enum {
   LAUNCHER_NONE,
   LAUNCHER_OPL,      // Open PS2 Loader
   LAUNCHER_NEUTRINO, // Neutrino
-  LAUNCHER_POPS      // POPS
+  LAUNCHER_POPS,     // POPS
+  LAUNCHER_ELF       // Generic ELF
 } Launcher;
+
+typedef struct ELFArgument {
+  char *arg;                // Argument
+  struct ELFArgument *next; // Next argument in the list
+} ELFArgument;
 
 typedef struct {
   char *fileName;
   char *titleID;
   DiscType type;
   Launcher launcher;
+  ELFArgument *args; // A linked list of optional ELF arguments
+  int argCount;      // Number of optional ELF arguments in the list
 } LauncherConfig;
 
-// Parses configuration file in the current working directory into LauncherConfig
+// Generates config name from APA partition path
+// and parses configuration file from the exFAT partition into LauncherConfig
 // Returns NULL on failure
-LauncherConfig *parseConfig();
+LauncherConfig *parseConfig(char *partitionPath);
 
 // Releases memory used by config, including the passed pointer
 void freeConfig(LauncherConfig *config);
