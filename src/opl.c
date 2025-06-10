@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char oplPath[] = BDM_MOUNTPOINT "/bbnl/OPNPS2LD.elf";
+static char oplPath[] = PFS_MOUNTPOINT "/bbnl/OPNPS2LD.elf";
 
 // Launches the ISO via OPL.
 int launchOPL(char *fileName, char *titleID, DiscType mediaType) {

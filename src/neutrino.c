@@ -9,7 +9,7 @@
 #include <string.h>
 
 // Arguments
-static char neutrinoPath[] = BDM_MOUNTPOINT "/neutrino/neutrino.elf";
+static char neutrinoPath[] = PFS_MOUNTPOINT "/neutrino/neutrino.elf";
 static char isoArgument[] = "dvd";
 static char bsdArgument[] = "bsd";
 // Neutrino bsd values
@@ -76,14 +76,14 @@ int launchNeutrino(char *fileName, DiscType type) {
   }
 
   // Build full ISO path
-  int pathLength = sizeof(BDM_MOUNTPOINT) + 5 + strlen(fileName);
+  int pathLength = sizeof(PFS_MOUNTPOINT) + 5 + strlen(fileName);
   char *filePath = calloc(sizeof(char), pathLength);
   switch (type) {
   case DISC_TYPE_CD:
-    snprintf(filePath, pathLength, "%s/CD/%s", BDM_MOUNTPOINT, fileName);
+    snprintf(filePath, pathLength, "%s/CD/%s", PFS_MOUNTPOINT, fileName);
     break;
   case DISC_TYPE_DVD:
-    snprintf(filePath, pathLength, "%s/DVD/%s", BDM_MOUNTPOINT, fileName);
+    snprintf(filePath, pathLength, "%s/DVD/%s", PFS_MOUNTPOINT, fileName);
     break;
   default:
     printf("ERROR: Unknown disc type\n");
@@ -125,7 +125,7 @@ void freeArgumentList(ArgumentList *result);
 // Generates ArgumentList from global config file located at targetMounpoint (usually ISO full path)
 int getGlobalLaunchArguments(ArgumentList *result) {
   char targetPath[PATH_MAX];
-  snprintf(targetPath, PATH_MAX, "%s/%s/%s", BDM_MOUNTPOINT, BASE_CONFIG_DIR, GLOBAL_OPTIONS_PATH);
+  snprintf(targetPath, PATH_MAX, "%s/%s/%s", PFS_MOUNTPOINT, BASE_CONFIG_DIR, GLOBAL_OPTIONS_PATH);
   int ret = loadArgumentList(result, targetPath);
   Argument *curArg = result->first;
   while (curArg != NULL) {
@@ -144,7 +144,7 @@ int getTitleLaunchArguments(ArgumentList *result, char *titleName) {
 
   printf("Looking for title-specific config for %s\n", titleName);
   char targetPath[PATH_MAX];
-  snprintf(targetPath, PATH_MAX, "%s/%s", BDM_MOUNTPOINT, BASE_CONFIG_DIR);
+  snprintf(targetPath, PATH_MAX, "%s/%s", PFS_MOUNTPOINT, BASE_CONFIG_DIR);
   // Determine actual title options file from config directory contents
   DIR *directory = opendir(targetPath);
   if (directory == NULL) {
@@ -159,7 +159,7 @@ int getTitleLaunchArguments(ArgumentList *result, char *titleName) {
     if (entry->d_type != DT_DIR) {
       // Find file that starts with ISO name (without the extension)
       if (!strncmp(entry->d_name, titleName, strlen(titleName))) {
-        snprintf(targetPath, PATH_MAX, "%s/%s/%s", BDM_MOUNTPOINT, BASE_CONFIG_DIR, entry->d_name);
+        snprintf(targetPath, PATH_MAX, "%s/%s/%s", PFS_MOUNTPOINT, BASE_CONFIG_DIR, entry->d_name);
         break;
       }
     }
@@ -296,8 +296,8 @@ int parseOptionsFile(ArgumentList *result, FILE *file) {
     size_t valueLength = substrIdx - startIdx;
     if ((lineBuffer[startIdx] == '/') || (lineBuffer[startIdx] == '\\')) {
       // Add device mountpoint to argument value if path starts with \ or /
-      arg->value = calloc(sizeof(char), valueLength + 1 + strlen(BDM_MOUNTPOINT));
-      strcpy(arg->value, BDM_MOUNTPOINT);
+      arg->value = calloc(sizeof(char), valueLength + 1 + strlen(PFS_MOUNTPOINT));
+      strcpy(arg->value, PFS_MOUNTPOINT);
     } else {
       arg->value = calloc(sizeof(char), valueLength + 1);
     }

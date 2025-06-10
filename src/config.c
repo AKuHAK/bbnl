@@ -10,7 +10,7 @@ static char pfsPostfixStr[] = ":pfs:";
 // When launched from partition header
 static char patinfoPostfixStr[] = ":PATINFO";
 static char apaPartitionPrefix[] = "hdd0:PP.";
-static char bbnlCfgPrefix[] = BDM_MOUNTPOINT "/bbnl/";
+static char bbnlCfgPrefix[] = PFS_MOUNTPOINT "/bbnl/";
 
 // Parses the line into LauncherConfig
 void parseLine(LauncherConfig *lcfg, char *line);

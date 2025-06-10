@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char popstarterPath[] = BDM_MOUNTPOINT "/bbnl/POPSTARTER.ELF";
+static char popstarterPath[] = PFS_MOUNTPOINT "/bbnl/POPSTARTER.ELF";
 
 // Launches POPS
 int launchPOPS(char *fileName) {

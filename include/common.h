@@ -3,6 +3,7 @@
 
 // exFAT on internal HDD
 #define BDM_MOUNTPOINT "mass0:"
+#define PFS_MOUNTPOINT "pfs0:"
 
 // Tests if file exists by opening it
 int tryFile(char *filePath);

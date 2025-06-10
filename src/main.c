@@ -77,10 +77,10 @@ int waitForHDD() {
   DIR *directory;
   int delayAttempts = 20;
 
-  printf("Trying to open %s\n", BDM_MOUNTPOINT);
+  printf("Trying to open %s\n", PFS_MOUNTPOINT);
   // Wait for IOP to initialize device driver
   for (int attempts = 0; attempts < delayAttempts; attempts++) {
-    directory = opendir(BDM_MOUNTPOINT);
+    directory = opendir(PFS_MOUNTPOINT);
     if (directory != NULL) {
       closedir(directory);
       return 0;
